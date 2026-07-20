@@ -178,6 +178,8 @@ function Projects() {
     reader.onload = () => {
       const avatar = typeof reader.result === "string" ? reader.result : "";
       if (!avatar) { alert("Unable to read this image. Please choose another one."); return; }
+      // Member is added immediately once a photo is chosen — this is a
+      // complete "add" action on its own, same as clicking the + button.
       setMembers((current) => [...current, { localId: crypto.randomUUID(), username, avatar }]);
       setMemberName("");
       setMemberPhoto("");
@@ -188,6 +190,9 @@ function Projects() {
     event.target.value = "";
   };
 
+  // Adds a member using just their name — avatar stays "" and the Avatar
+  // component's fallback (first letter, colored circle) takes over when
+  // rendering. This is the "no photo" path and it always adds the member.
   const addMember = () => {
     const username = memberName.trim();
     if (!username) { alert("Please enter a team member name."); return; }
@@ -254,10 +259,6 @@ function Projects() {
     }
   };
 
-  // --- SEARCH FIX ---
-  // `search` was being pulled from useSearch() but never used, so the
-  // projects list was never actually filtered. Now we trim + lowercase
-  // the query and match it against the project name and member names.
   const normalizedSearch = (search ?? "").trim().toLowerCase();
 
   const filteredProjects = normalizedSearch
@@ -292,39 +293,39 @@ function Projects() {
   return (
     <DashboardLayout title="Projects" subtitle="View all projects and track progress.">
 
-      {/* TOOLBAR */}
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 w-fit">
+      {/* TOOLBAR - stacks on mobile, row on larger screens */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 w-full sm:w-fit">
           <button
             type="button"
             onClick={() => setView("kanban")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 transition ${
+            className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm transition ${
               view === "kanban"
                 ? "bg-[#0b46bc] text-white"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <LayoutGrid className="w-4 h-4" />
-            Kanban
+            <span>Kanban</span>
           </button>
           <button
             type="button"
             onClick={() => setView("table")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 transition ${
+            className={`flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-xl px-3 sm:px-4 py-2 text-sm transition ${
               view === "table"
                 ? "bg-[#0b46bc] text-white"
                 : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
           >
             <Table2 className="w-4 h-4" />
-            Table
+            <span>Table</span>
           </button>
         </div>
 
         <button
           type="button"
           onClick={openAddModal}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#0b46bc] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#093a9e] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#0b46bc] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#093a9e] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200"
         >
           <Plus className="h-4 w-4" />
           New Project
@@ -463,12 +464,14 @@ function Projects() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
         >
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white dark:bg-slate-900 shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-6 py-5 backdrop-blur">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 px-5 sm:px-6 py-5 backdrop-blur">
               <div>
                 <h2 id="project-modal-title" className="text-xl font-bold text-slate-900 dark:text-slate-100">
                   {editingProjectId ? "Edit project" : "Create a project"}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Set the details and add your team.</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Set the details and add your team.
+                </p>
               </div>
               <button
                 type="button"
@@ -480,32 +483,38 @@ function Projects() {
               </button>
             </div>
 
-            <div className="space-y-6 p-6">
+            <div className="space-y-6 p-5 sm:p-6">
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block sm:col-span-2">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Project name</span>
+                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Project name
+                  </span>
                   <input
                     autoFocus
                     value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
+                    onChange={(event) => setProjectName(event.target.value)}
                     placeholder="e.g. Website redesign"
                     className={inputClass}
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Due date</span>
+                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Due date
+                  </span>
                   <input
                     type="date"
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(event) => setDueDate(event.target.value)}
                     className={inputClass}
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Priority</span>
+                  <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    Priority
+                  </span>
                   <select
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value as Priority)}
+                    onChange={(event) => setPriority(event.target.value as Priority)}
                     className={inputClass}
                   >
                     <option value="Low">Low</option>
@@ -515,57 +524,53 @@ function Projects() {
                 </label>
               </div>
 
-              {/* TEAM MEMBERS */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 p-4">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 p-4">
                 <div className="mb-3">
-                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">Team members</h3>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Add a name, then optionally attach a profile photo.</p>
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Team members {members.length > 0 && `(${members.length})`}
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    Type a name and press Enter (or tap +) to add them — a photo is optional. Without one, their initial shows in a colored circle.
+                  </p>
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     value={memberName}
-                    onChange={(e) => setMemberName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMember(); } }}
+                    onChange={(event) => setMemberName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addMember();
+                      }
+                    }}
                     placeholder="Member name"
                     className={inputClass}
                   />
-                  <label
-                    title="Choose profile photo"
-                    className="flex h-[50px] w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 shadow-sm transition hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                  >
-                    <Camera className="h-5 w-5" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addMember}
-                    disabled={!memberName.trim() || photoLoading}
-                    aria-label="Add member"
-                    className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-[#0b46bc] text-white transition hover:bg-[#093a9e] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <Plus className="h-5 w-5" />
-                  </button>
+                  <div className="flex gap-2">
+                    <label
+                      title="Choose profile photo (optional)"
+                      className="flex h-[50px] w-[50px] shrink-0 cursor-pointer items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-slate-700"
+                    >
+                      <Camera className="h-5 w-5" />
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addMember}
+                      disabled={!memberName.trim() || photoLoading}
+                      aria-label="Add member"
+                      className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-xl bg-[#0b46bc] text-white transition hover:bg-[#093a9e] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {photoLoading && (
-                  <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">Preparing profile photo…</p>
-                )}
-
-                {memberPhoto && (
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border border-blue-100 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-900/20 p-3">
-                    <Avatar member={{ username: memberName || "New member", avatar: memberPhoto }} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Photo ready for {memberName || "new member"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setMemberPhoto("")}
-                      aria-label="Discard selected photo"
-                      className="rounded-lg p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-900/30"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    Preparing profile photo…
+                  </p>
                 )}
 
                 {members.length > 0 && (
@@ -573,12 +578,14 @@ function Projects() {
                     {members.map((member) => (
                       <div
                         key={member.localId}
-                        className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5"
+                        className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 shadow-sm"
                       >
-                        <Avatar member={member} size="sm" />
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {member.username}
-                        </span>
+                        <div className="flex min-w-0 items-center gap-3">
+                          <Avatar member={member} />
+                          <span className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            {member.username}
+                          </span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => removeMember(member.localId)}
@@ -591,14 +598,21 @@ function Projects() {
                     ))}
                   </div>
                 )}
+
+                {members.length === 0 && (
+                  <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
+                    No team members added yet.
+                  </p>
+                )}
               </div>
 
-              {/* STATUS */}
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Status</span>
+                <span className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Status
+                </span>
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as ProjectStatus)}
+                  onChange={(event) => setStatus(event.target.value as ProjectStatus)}
                   className={inputClass}
                 >
                   <option value="Pending">Pending</option>
@@ -607,7 +621,6 @@ function Projects() {
                 </select>
               </label>
 
-              {/* ACTIONS */}
               <div className="flex flex-col-reverse gap-3 border-t border-slate-100 dark:border-slate-800 pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"

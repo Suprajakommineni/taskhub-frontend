@@ -35,11 +35,6 @@ function getProjectColor(id: string) {
   return PROJECT_COLORS[Math.abs(hash) % PROJECT_COLORS.length];
 }
 
-// A notification can represent either a project or a task approaching its
-// due date. The backend doesn't send an explicit `type` field, so we infer
-// which kind it is from the fields present: project-shaped items carry
-// members/progress/priority/tasks; task-shaped items carry a `project`
-// reference. If your API ever adds a `type` field, prefer that instead.
 function isProjectNotification(item: any): boolean {
   if (!item || typeof item !== "object") return false;
   if ("project" in item) return false;
@@ -60,9 +55,9 @@ function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
 
   const [showCalendar, setShowCalendar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSearchInput, setShowSearchInput] = useState(false);
 
   const { search, setSearch } = useSearch();
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const { user, notifications, projects } = useAppData();
 
@@ -170,6 +165,99 @@ function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
           </p>
 
           <nav className="space-y-1">
+            {/* SEARCH - expands inline below itself when clicked */}
+            <div>
+              <button
+                onClick={() => setShowSearchInput((prev) => !prev)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full text-left ${
+                  showSearchInput
+                    ? "bg-blue-50 dark:bg-blue-600/15 text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
+                }`}
+              >
+                <Search className="w-[18px] h-[18px]" strokeWidth={2} />
+                Search
+                {search && (
+                  <span className="ml-auto w-2 h-2 rounded-full bg-blue-500" />
+                )}
+              </button>
+
+              {showSearchInput && (
+                <div className="mt-1 mb-1 px-1">
+                  <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
+                    <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                    <input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Type to search..."
+                      autoFocus
+                      className="outline-none text-sm bg-transparent w-full text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      type="text"
+                      name="sidebar-search"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore
+                    />
+                    {search && (
+                      <button onClick={() => setSearch("")} aria-label="Clear search">
+                        <X className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* NOTIFICATIONS - shows count, expands dropdown below itself */}
+            <div>
+              <button
+                onClick={() => setShowNotifications((prev) => !prev)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full text-left ${
+                  showNotifications
+                    ? "bg-blue-50 dark:bg-blue-600/15 text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100"
+                }`}
+              >
+                <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
+                Notifications
+                {notifications.length > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="mt-1 mb-1 mx-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-500 dark:text-slate-400">No notifications</p>
+                  ) : (
+                    notifications.map((item: any) => {
+                      const isProject = isProjectNotification(item);
+                      return (
+                        <div
+                          key={item._id}
+                          className="p-3 border-b border-slate-200 dark:border-slate-700 last:border-0 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                          <p className="font-semibold text-sm text-slate-800 dark:text-slate-200">
+                            {item.name}
+                          </p>
+                          {!isProject && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Project {item.project?.name}
+                            </p>
+                          )}
+                          <p className="text-xs text-red-500 dark:text-red-400 font-semibold">
+                            Due: {formatNotificationDate(item.dueDate)}
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = location.pathname === item.path;
@@ -281,135 +369,21 @@ function DashboardLayout({ children, title, subtitle }: DashboardLayoutProps) {
 
       {/* MAIN */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        <header className="relative flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3 pr-24 md:pr-0">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-slate-700 dark:text-slate-200"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+        <header className="relative flex items-center gap-3 mb-8">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-slate-700 dark:text-slate-200"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-            <div>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 text-balance">
-                {title}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400">{subtitle}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-end">
-            <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-3 rounded-2xl">
-              <Search className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="outline-none text-sm bg-transparent text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                placeholder="Search"
-                type="text"
-                name="dashboard-search"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore
-              />
-            </div>
-
-            <button
-              onClick={() => setMobileSearchOpen((prev) => !prev)}
-              className="sm:hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl relative"
-              aria-label="Toggle search"
-            >
-              {mobileSearchOpen ? (
-                <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-              ) : (
-                <Search className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-              )}
-              {!mobileSearchOpen && search && (
-                <span className="absolute -top-1 -right-1 bg-blue-500 w-2.5 h-2.5 rounded-full" />
-              )}
-            </button>
-
-            {/* NOTIFICATIONS */}
-            <div
-              className="relative"
-              onMouseEnter={() => setShowNotifications(true)}
-              onMouseLeave={() => setShowNotifications(false)}
-            >
-              <button className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl relative">
-                <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-                {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] h-[20px] flex items-center justify-center">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="
-                  fixed sm:absolute
-                  top-20 sm:top-auto
-                  left-1/2 sm:left-auto
-                  -translate-x-1/2 sm:translate-x-0
-                  right-auto sm:right-0
-                  w-[90vw] sm:w-80
-                  max-w-[280px]
-                  bg-white dark:bg-slate-900
-                  border border-slate-200 dark:border-slate-800
-                  rounded-2xl shadow-2xl z-50 max-h-80 overflow-auto
-                ">
-                  <div className="p-3 font-bold text-slate-900 dark:text-slate-100">Notifications</div>
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-500 dark:text-slate-400">No notifications</p>
-                  ) : (
-                    notifications.map((item: any) => {
-                      const isProject = isProjectNotification(item);
-                      return (
-                        <div
-                          key={item._id}
-                          className="p-3 border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                        >
-                          
-                          <p className="font-semibold text-slate-800 dark:text-slate-200">{item.name}</p>
-                          {!isProject && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              Project {item.project?.name }
-                            </p>
-                          )}
-                          <p className="text-xs text-red-500 dark:text-red-400 font-semibold">
-                            Due: {formatNotificationDate(item.dueDate)}
-                          </p>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
+          <div>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 text-balance">
+              {title}
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400">{subtitle}</p>
           </div>
         </header>
-
-        {mobileSearchOpen && (
-          <div className="sm:hidden flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-3 rounded-2xl mb-4">
-            <Search className="w-5 h-5 text-slate-400 dark:text-slate-500 shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="outline-none text-sm w-full bg-transparent text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-              placeholder="Search"
-              type="text"
-              name="dashboard-search-mobile"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore
-              autoFocus
-            />
-            {search && (
-              <button onClick={() => setSearch("")} aria-label="Clear search">
-                <X className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-              </button>
-            )}
-          </div>
-        )}
 
         {children}
       </main>

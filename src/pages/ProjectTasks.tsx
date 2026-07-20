@@ -197,40 +197,42 @@ function ProjectTasks() {
   return (
     <DashboardLayout title={projectName || "Project Tasks"} subtitle="Manage project tasks">
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          to="/projects"
-          className="flex items-center gap-2 text-[#0b46bc] dark:text-blue-400 font-semibold hover:underline"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Projects
-        </Link>
+      {/* HEADER - stacks on mobile, row on larger screens */}
+<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+  <Link
+    to="/projects"
+    className="flex items-center gap-2 text-[#0b46bc] dark:text-blue-400 font-semibold hover:underline"
+  >
+    <ArrowLeft className="w-5 h-5" />
+    Back to Projects
+  </Link>
 
-        <button
-          onClick={openAddModal}
-          className="bg-[#0b46bc] text-white px-5 py-3 rounded-2xl font-semibold flex items-center gap-2 hover:bg-[#093a9e] transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          New Task
-        </button>
-      </div>
+  <button
+    onClick={openAddModal}
+    className="w-full sm:w-auto bg-[#0b46bc] text-white px-5 py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 hover:bg-[#093a9e] transition-colors"
+  >
+    <Plus className="w-5 h-5" />
+    New Task
+  </button>
+</div>
 
-      {/* VIEW TOGGLE */}
-      <div className="mb-6 flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 w-fit">
-        <button onClick={() => setView("kanban")} className={viewBtnClass(view === "kanban")}>
-          <LayoutGrid className="w-4 h-4" /> Kanban
-        </button>
-        <button onClick={() => setView("table")} className={viewBtnClass(view === "table")}>
-          <Table2 className="w-4 h-4" /> Table
-        </button>
-        <button onClick={() => setView("list")} className={viewBtnClass(view === "list")}>
-          <List className="w-4 h-4" /> List
-        </button>
-        <button onClick={() => setView("timeline")} className={viewBtnClass(view === "timeline")}>
-          <CalendarRange className="w-4 h-4" /> Timeline
-        </button>
-      </div>
+{/* VIEW TOGGLE - wraps and fills width on mobile, fits content on desktop */}
+<div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 w-full sm:w-fit">
+  <button onClick={() => setView("kanban")} className={`flex-1 sm:flex-none justify-center ${viewBtnClass(view === "kanban")}`}>
+    <LayoutGrid className="w-4 h-4" /> <span className="hidden xs:inline">Kanban</span>
+  </button>
+  <button onClick={() => setView("table")} className={`flex-1 sm:flex-none justify-center ${viewBtnClass(view === "table")}`}>
+    <Table2 className="w-4 h-4" /> <span className="hidden xs:inline">Table</span>
+  </button>
+  <button onClick={() => setView("list")} className={`flex-1 sm:flex-none justify-center ${viewBtnClass(view === "list")}`}>
+    <List className="w-4 h-4" /> <span className="hidden xs:inline">List</span>
+  </button>
+  <button onClick={() => setView("timeline")} className={`flex-1 sm:flex-none justify-center ${viewBtnClass(view === "timeline")}`}>
+    <CalendarRange className="w-4 h-4" /> <span className="hidden xs:inline">Timeline</span>
+  </button>
+</div>
+
+      
 
       {/* VIEWS */}
       {view === "kanban" && (
